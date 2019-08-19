@@ -79,6 +79,8 @@ class ALOCC_Model(object):
         self.g_bn4 = batch_norm(name='g_bn4')
         self.g_bn5 = batch_norm(name='g_bn5')
         self.g_bn6 = batch_norm(name='g_bn6')
+        self.g_bn7 = batch_norm(name='g_bn7')
+        self.g_bn8 = batch_norm(name='g_bn8')
 
         self.dataset_name = dataset_name
         self.dataset_address = dataset_address
@@ -142,7 +144,8 @@ class ALOCC_Model(object):
         # Refinement loss
         self.g_r_loss = tf.reduce_sum(-self.inputs * tf.log(self.G + 1e-10) - (1.0 - self.inputs) * tf.log(1.0 - self.G + 1e-10))
 
-        self.pre_train_loss = self.g_r_loss * self.r_alpha + self.kld_loss * self.r_beta
+        self.pre_train_loss = (self.g_r_loss * self.r_alpha + self.kld_loss * self.r_beta) / self.batch_size
+        self.pre_train_loss = (self.g_r_loss * self.r_alpha) / self.batch_size
 
         self.g_loss = self.g_loss + self.g_r_loss * self.r_alpha + self.kld_loss * self.r_beta
         self.d_loss = self.d_loss_real + self.d_loss_fake
@@ -327,7 +330,7 @@ class ALOCC_Model(object):
             hae0 = lrelu(self.g_bn4(conv2d(z, self.df_dim * 2, name='g_encoder_h0_conv')))
             hae1 = lrelu(self.g_bn5(conv2d(hae0, self.df_dim * 4, name='g_encoder_h1_conv')))
             hae2 = lrelu(self.g_bn6(conv2d(hae1, self.df_dim * 8, name='g_encoder_h2_conv')))
-            hae3 = lrelu(self.g_bn6(conv2d(hae2, self.df_dim * 16, name='g_encoder_h3_conv')))
+            hae3 = lrelu(self.g_bn7(conv2d(hae2, self.df_dim * 16, name='g_encoder_h3_conv')))
 
             flat = tf.contrib.layers.flatten(hae2)  # output [batch, 4*4*64]
 
@@ -341,11 +344,11 @@ class ALOCC_Model(object):
             net = tf.nn.relu(tf.reshape(z_develop, [-1, 2, 2, self.df_dim * 16]))
 
             h1, self.h1_w, self.h1_b = deconv2d(
-                net, [self.batch_size, s_h16, s_w4, self.gf_dim * 2], name='g_decoder_h2', with_w=True)
-            h1 = tf.nn.relu(self.g_bn2(h1))
+                net, [self.batch_size, s_h8, s_w8, self.gf_dim * 2], name='g_decoder_h2', with_w=True)
+            h1 = tf.nn.relu(self.g_bn8(h1))
 
             h2, self.h2_w, self.h2_b = deconv2d(
-                h1, [self.batch_size, s_h4, s_w16, self.gf_dim * 2], name='g_decoder_h1', with_w=True)
+                h1, [self.batch_size, s_h4, s_w4, self.gf_dim * 2], name='g_decoder_h1', with_w=True)
             h2 = tf.nn.relu(self.g_bn2(h2))
 
             h3, self.h3_w, self.h3_b = deconv2d(
@@ -371,7 +374,7 @@ class ALOCC_Model(object):
             hae0 = lrelu(self.g_bn4(conv2d(z, self.df_dim * 2, name='g_encoder_h0_conv')))
             hae1 = lrelu(self.g_bn5(conv2d(hae0, self.df_dim * 4, name='g_encoder_h1_conv')))
             hae2 = lrelu(self.g_bn6(conv2d(hae1, self.df_dim * 8, name='g_encoder_h2_conv')))
-            hae3 = lrelu(self.g_bn6(conv2d(hae2, self.df_dim * 16, name='g_encoder_h3_conv')))
+            hae3 = lrelu(self.g_bn7(conv2d(hae2, self.df_dim * 16, name='g_encoder_h3_conv')))
 
             flat = tf.contrib.layers.flatten(hae2)  # output [batch, 4*4*64]
 
@@ -385,11 +388,11 @@ class ALOCC_Model(object):
             net = tf.nn.relu(tf.reshape(z_develop, [-1, 2, 2, self.df_dim * 16]))
 
             h1, self.h1_w, self.h1_b = deconv2d(
-                net, [self.batch_size, s_h16, s_w4, self.gf_dim * 2], name='g_decoder_h2', with_w=True)
-            h1 = tf.nn.relu(self.g_bn2(h1))
+                net, [self.batch_size, s_h8, s_w8, self.gf_dim * 2], name='g_decoder_h2', with_w=True)
+            h1 = tf.nn.relu(self.g_bn8(h1))
 
             h2, self.h2_w, self.h2_b = deconv2d(
-                h1, [self.batch_size, s_h4, s_w16, self.gf_dim * 2], name='g_decoder_h1', with_w=True)
+                h1, [self.batch_size, s_h4, s_w4, self.gf_dim * 2], name='g_decoder_h1', with_w=True)
             h2 = tf.nn.relu(self.g_bn2(h2))
 
             h3, self.h3_w, self.h3_b = deconv2d(
