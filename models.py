@@ -399,7 +399,8 @@ class ALOCC_Model(object):
             h4, self.h4_w, self.h4_b = deconv2d(
                 h3, [self.batch_size, s_h, s_w, self.c_dim], name='g_decoder_h00', with_w=True)
 
-        return tf.nn.sigmoid(h4, name='g_output')
+
+            return tf.nn.sigmoid(h4, name='g_output')
 
     # =========================================================================================================
     @property
