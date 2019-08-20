@@ -44,15 +44,20 @@ class autoencoder(nn.Module):
     def __init__(self):
         super(autoencoder, self).__init__()
         self.encoder = nn.Sequential(
-            nn.Conv2d(1, 16, 3, stride=3, padding=1),  # b, 16, 10, 10
+            nn.Conv2d(1, 16, 3, stride=2, padding=1),  # b, 16, 14, 14
             nn.ReLU(True),
-            nn.MaxPool2d(2, stride=2),  # b, 16, 5, 5
-            nn.Conv2d(16, 8, 3, stride=2, padding=1),  # b, 8, 3, 3
+            nn.MaxPool2d(2, stride=1),  # b, 16, 13, 13
+            nn.Conv2d(16, 32, 3, stride=2, padding=1),  # b, 32, 7, 7
             nn.ReLU(True),
-            nn.MaxPool2d(2, stride=1)  # b, 8, 2, 2
+            nn.MaxPool2d(2, stride=1),  # b, 32, 6, 6
+            nn.Conv2d(32, 64, 3, stride=2, padding=1),  # b, 64, 3, 3
+            nn.ReLU(True),
+            nn.MaxPool2d(2, stride=2, padding=1)  # b, 64, 2, 2
         )
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(8, 16, 3, stride=2),  # b, 16, 5, 5
+            nn.ConvTranspose2d(64, 32, 3, stride=2, padding=1),  # b, 32, 3, 3
+            nn.ReLU(True),
+            nn.ConvTranspose2d(32, 16, 3, stride=2, padding=1),  # b, 16, 5, 5
             nn.ReLU(True),
             nn.ConvTranspose2d(16, 8, 5, stride=3, padding=1),  # b, 8, 15, 15
             nn.ReLU(True),
@@ -70,7 +75,7 @@ model = autoencoder().cuda()
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate,
                              weight_decay=1e-5)
-
+f = open("print.txt", "w+")
 for epoch in range(num_epochs):
     for data in dataloader:
         img, _ = data
@@ -83,10 +88,13 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
     # ===================log========================
-    print('epoch [{}/{}], loss:{:.4f}'
-          .format(epoch+1, num_epochs, loss.item()))
+    msg = 'epoch [{}/{}], loss:{:.4f}\n'.format(epoch+1, num_epochs, loss.item())
+    f.write(msg)
+    print(msg)
+
     if epoch % 10 == 0:
         pic = to_img(output.cpu().data)
         save_image(pic, './dc_img/image_{}.png'.format(epoch))
 
 torch.save(model.state_dict(), './conv_autoencoder.pth')
+f.close()
