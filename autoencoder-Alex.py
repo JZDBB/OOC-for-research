@@ -23,12 +23,20 @@ num_epochs = 100
 batch_size = 128
 learning_rate = 1e-3
 
+# RGB
+# img_transform = transforms.Compose([
+#     transforms.ToTensor(),
+#     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+# ])
+
+# gray image
 img_transform = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-])
+    transforms.Normalize((0.1307,), (0.3081,))
+    ])
 
-dataset = MNIST('./data', transform=img_transform)
+
+dataset = MNIST('./data', transform=img_transform, download=True)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 
@@ -76,7 +84,7 @@ for epoch in range(num_epochs):
         optimizer.step()
     # ===================log========================
     print('epoch [{}/{}], loss:{:.4f}'
-          .format(epoch+1, num_epochs, loss.data[0]))
+          .format(epoch+1, num_epochs, loss.item()))
     if epoch % 10 == 0:
         pic = to_img(output.cpu().data)
         save_image(pic, './dc_img/image_{}.png'.format(epoch))
