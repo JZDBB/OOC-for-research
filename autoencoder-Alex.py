@@ -15,11 +15,11 @@ if not os.path.exists('./dc_img'):
 def to_img(x):
     x = 0.5 * (x + 1)
     x = x.clamp(0, 1)
-    x = x.view(x.size(0), 1, 28, 28)
+    x = x.view(x.size(0), 3, 32, 32)
     return x
 
 
-num_epochs = 100
+num_epochs = 300
 batch_size = 128
 learning_rate = 1e-3
 
@@ -36,7 +36,7 @@ img_transform = transforms.Compose([
 #     ])
 
 
-dataset = CIFAR10('./data', transform=img_transform, download=True)
+dataset = CIFAR10('./data', transform=img_transform)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 
@@ -61,13 +61,13 @@ class autoencoder(nn.Module):
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(256, 512, 3, stride=1, padding=1),  # b, 512, 3, 3
             nn.ReLU(True),
-            nn.ConvTranspose2d(512, 512, 3, stride=2, padding=1),  # b, 16, 5, 5
+            nn.ConvTranspose2d(512, 512, 3, stride=1, padding=1),  # b, 512, 5, 5
             nn.ReLU(True),
-            nn.ConvTranspose2d(512, 256, 5, stride=3, padding=1),  # b, 8, 15, 15
+            nn.ConvTranspose2d(512, 256, 3, stride=2, padding=1),  # b, 256, 9, 9
             nn.ReLU(True),
-            nn.ConvTranspose2d(256, 64, 5, stride=3, padding=1),  # b, 8, 15, 15
+            nn.ConvTranspose2d(256, 64, 5, stride=2, padding=2),  # b, 8, 17, 17
             nn.ReLU(True),
-            nn.ConvTranspose2d(64, 16, 5, stride=3, padding=1),  # b, 8, 15, 15
+            nn.ConvTranspose2d(64, 16, 5, stride=2, padding=2),  # b, 8, 19, 19
             nn.ReLU(True),
             nn.ConvTranspose2d(16, 3, 2, stride=2, padding=1),  # b, 1, 28, 28
             nn.Tanh()
@@ -80,6 +80,7 @@ class autoencoder(nn.Module):
 
 
 model = autoencoder().cuda()
+model.load_state_dict(torch.load('./conv_autoencoder.pth'))
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate,
                              weight_decay=1e-5)
